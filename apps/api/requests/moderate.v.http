@@ -1,5 +1,5 @@
 POST http://localhost:8000/moderate HTTP/1.0
 
 {
-  "input": "I will punch you very hard because I enjoy being VIOLENT!"
+  "userQuery": "I will punch you very hard because I enjoy being VIOLENT!"
 }

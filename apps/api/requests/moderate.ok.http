@@ -1,5 +1,5 @@
 POST http://localhost:8000/moderate HTTP/1.0
 
 {
-  "input": "I enjoyed a peaceful walk in the park today and the weather was perfect."
+  "userQuery": "I enjoyed a peaceful walk in the park today and the weather was perfect."
 }

@@ -6,8 +6,8 @@ from asyncio import wait_for, TimeoutError
 from transformers import pipeline
 from pprint import pprint
 
-MIN_INPUT_LENGTH = 10;
-MAX_INPUT_LENGTH = 1000;
+MIN_USER_QUERY_LENGTH = 10;
+MAX_USER_QUERY_LENGTH = 1000;
 
 MAX_INFERENCE_TIME = 10; # seconds
 
@@ -35,32 +35,32 @@ async def post_moderate(request: Request):
   print("requestBody:")
   pprint(requestBody)
 
-  userInput = requestBody.get("input")
-  print("userInput:")
-  pprint(userInput)
+  userQuery = requestBody.get("userQuery")
+  print("userQuery:")
+  pprint(userQuery)
 
-  if userInput is None:
+  if userQuery is None:
     return JSONResponse(
       status_code = status.HTTP_400_BAD_REQUEST,
-      content = { "success": False, "error": "No input provided" }
+      content = { "success": False, "error": "No query provided" }
     )
 
-  if len(userInput) < MIN_INPUT_LENGTH:
+  if len(userQuery) < MIN_USER_QUERY_LENGTH:
     return JSONResponse(
       status_code = status.HTTP_400_BAD_REQUEST,
-      content = { "success": False, "error": f"Input too short (minimum {MIN_INPUT_LENGTH} characters)" }
+      content = { "success": False, "error": f"Query too short (minimum {MIN_USER_QUERY_LENGTH} characters)" }
     )
 
-  if len(userInput) > MAX_INPUT_LENGTH:
+  if len(userQuery) > MAX_USER_QUERY_LENGTH:
     return JSONResponse(
       status_code = status.HTTP_400_BAD_REQUEST,
-      content = { "success": False, "error": f"Input too long (maximum {MAX_INPUT_LENGTH} characters)" }
+      content = { "success": False, "error": f"Query too long (maximum {MAX_USER_QUERY_LENGTH} characters)" }
     )
 
   try:
     # Improve speed by running in the threadpool & improve resource management by setting a timeout to the operation
     moderationResult = await wait_for(
-      run_in_threadpool(app.state.moderator, userInput),
+      run_in_threadpool(app.state.moderator, userQuery),
       timeout = MAX_INFERENCE_TIME
     )
 
