@@ -1,0 +1,7 @@
+{
+  "name": "ai-moderation-workspace",
+  "scripts": {},
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
