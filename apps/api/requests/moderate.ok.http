@@ -1,0 +1,5 @@
+POST http://localhost:8000/moderate HTTP/1.0
+
+{
+  "input": "We're driving AI towards a secure, innovative future. Join a culture of collaboration and experimentation, where your skills will directly contribute to shaping safer AI technologies."
+}
