@@ -21,7 +21,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
+} from "@/components/ui/accordion";
 import { cn, displayDecimalAsPercentage } from '@/lib/utils';
 import {
   Table,
@@ -41,10 +41,12 @@ export default function SingleQueryTabContent() {
   const [query, setQuery] = useState("");
   const [queryResponseData, setQueryResponseData] = useState<ModerateSuccessfulResponse | null>(null);
   const [queryErrorMessage, setQueryErrorMessage] = useState("");
+  const [isModerateLoading, setIsModerateLoading] = useState(false);
 
   const onModerateClick = useCallback(async () => {
     setQueryErrorMessage("");
     setQueryResponseData(null);
+    setIsModerateLoading(true);
 
     const moderatePath = '/api/moderate';
     const body: ModerateRequest = {
@@ -58,6 +60,8 @@ export default function SingleQueryTabContent() {
       method: 'POST',
       body: bodyJson,
     })
+
+    setIsModerateLoading(false);
 
     const moderateResponseBody: ModerateResponse = await moderateResponse.json();
 
@@ -105,10 +109,10 @@ export default function SingleQueryTabContent() {
           </div>
           {classifications.length > 0 && (
             <div className="space-y-1 text-center">
-              <h3>Result</h3>
+              <h3 className="font-bold underline">Result</h3>
               <p>Your content was marked as <span className={cn(resultColorClass, "font-bold")}>{moderateLabelMappings[mostLikelyClassification.label]}</span>, with a score of <span className="font-bold">{displayDecimalAsPercentage(mostLikelyClassification.score)}</span>.</p>
               <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="details">
+                <AccordionItem value="moderate-details">
                   <AccordionTrigger className='text-center'><span className='w-full text-center'>Details</span></AccordionTrigger>
                   <AccordionContent>
                     <Table>
@@ -137,7 +141,7 @@ export default function SingleQueryTabContent() {
           )}
         </CardContent>
         <CardFooter className='flex-col'>
-          <Button onClick={onModerateClick} className='cursor-pointer'><FontAwesomeIcon icon={faShieldHalved} /> Moderate</Button>
+          <Button onClick={onModerateClick} className='cursor-pointer' disabled={isModerateLoading}><FontAwesomeIcon icon={faShieldHalved} /> Moderate</Button>
           <p className='text-red-600 font-medium'>{queryErrorMessage}</p>
         </CardFooter>
       </Card>

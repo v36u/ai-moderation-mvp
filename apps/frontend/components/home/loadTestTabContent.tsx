@@ -20,6 +20,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBolt, faCircleInfo, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { ChangeEvent, TextareaHTMLAttributes, useCallback, useState } from 'react';
 import { defaultConcurrentRequests, defaultQuery, defaultTotalRequests, maxConcurrentRequests, maxTotalRequests, ModerateLoadTestRequest, ModerateLoadTestResponse, ModerateLoadTestSuccessfulResponse } from '@/lib/constants/moderate';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Result as AutocannonResult } from "autocannon";
 
 export default function LoadTestTabContent() {
   // BEFOREPROD: Use an actual form
@@ -29,10 +37,12 @@ export default function LoadTestTabContent() {
   const [queryPool, setQueryPool] = useState<string[]>([defaultQuery]);
   const [loadTestResponseData, setLoadTestResponseData] = useState<ModerateLoadTestSuccessfulResponse | null>(null);
   const [loadTestErrorMessage, setLoadTestErrorMessage] = useState("");
+  const [isLoadTestLoading, setIsLoadTestLoading] = useState(false);
 
   const onStartClick = useCallback(async () => {
     setLoadTestErrorMessage("");
     setLoadTestResponseData(null);
+    setIsLoadTestLoading(true);
 
     const loadTestPath = '/api/moderate/load-test';
     const body: ModerateLoadTestRequest = {
@@ -49,6 +59,8 @@ export default function LoadTestTabContent() {
       method: 'POST',
       body: bodyJson,
     })
+
+    setIsLoadTestLoading(false);
 
     const loadTestResponseBody: ModerateLoadTestResponse = await loadTestResponse.json();
 
@@ -84,8 +96,6 @@ export default function LoadTestTabContent() {
     const [_removedElement, ...updatedQueryPool] = queryPool;
     setQueryPool(updatedQueryPool);
   }, [queryPool]);
-
-  console.log(loadTestResponseData);
 
   return (
     <TabsContent value="load">
@@ -132,13 +142,67 @@ export default function LoadTestTabContent() {
 
               return <Textarea key={textareaId} id={textareaId} value={queryPoolItem} onChange={onQueryChange} />
             })}
+            {loadTestResponseData && (
+              <div className="space-y-1 text-center">
+                <h3 className="font-bold underline">Result</h3>
+                <p>Below is a report of the load test.</p>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="load-test-raw-data">
+                    <AccordionTrigger className='text-center'><span className='w-full text-center'>See full raw data</span></AccordionTrigger>
+                    <AccordionContent>
+                      <RecursiveRawDataValue rawData={loadTestResponseData.data} tableCaption='Load test full raw data' />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter className='flex-col'>
-          <Button onClick={onStartClick} className='cursor-pointer'><FontAwesomeIcon icon={faBolt} /> Start</Button>
+          <Button onClick={onStartClick} className='cursor-pointer' disabled={isLoadTestLoading}><FontAwesomeIcon icon={faBolt} /> Start</Button>
           <p className='text-red-600 font-medium'>{loadTestErrorMessage}</p>
         </CardFooter>
       </Card>
     </TabsContent>
   );
+}
+
+type RecursiveRawDataValueParams = {
+  rawData: any;
+  tableCaption: string;
+}
+
+// BEFOREPROD: Add a depth limit
+function RecursiveRawDataValue({ rawData, tableCaption }: RecursiveRawDataValueParams) {
+  return <Table>
+    <TableCaption>{tableCaption}</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className='text-center'>Key</TableHead>
+        <TableHead className='text-center'>Value</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Object.keys(rawData).map((rawDataPropKey) => {
+        const rawDataPropValue = rawData[rawDataPropKey as keyof typeof rawData];
+
+        return <TableRow key={rawDataPropKey}>
+          <TableCell className="font-medium">{rawDataPropKey}</TableCell>
+          {typeof (rawDataPropValue) === 'object' && rawDataPropValue instanceof Date === false ?
+            rawDataPropValue === null ?
+              <TableCell>null</TableCell>
+              :
+              <TableCell>
+                <RecursiveRawDataValue rawData={rawDataPropValue} tableCaption={rawDataPropKey} />
+              </TableCell>
+            :
+            typeof rawDataPropValue === 'undefined' ?
+              <TableCell>undefined</TableCell>
+              :
+              <TableCell>{rawDataPropValue.toString()}</TableCell>
+          }
+        </TableRow>
+      })}
+    </TableBody>
+  </Table>
 }
