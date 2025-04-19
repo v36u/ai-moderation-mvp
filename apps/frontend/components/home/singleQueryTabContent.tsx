@@ -15,7 +15,7 @@ import {
   TabsContent,
 } from "@/components/ui/tabs"
 import { ChangeEvent, useCallback, useState } from 'react';
-import { ModerateResponse, ModerateSuccessfulResponse, moderateLabelMappings, ModerateResponseSuccessfulDataItem } from '@/lib/constants/moderate'
+import { ModerateResponse, ModerateSuccessfulResponse, moderateLabelMappings, ModerateResponseSuccessfulDataItem, ModerateRequest } from '@/lib/constants/moderate'
 import {
   Accordion,
   AccordionContent,
@@ -28,25 +28,26 @@ import {
   TableBody,
   TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 
 export default function SingleQueryTabContent() {
   // BEFOREPROD: Use an actual form with proper validation handling (using states and such), various triggering mechanisms, etc
 
   const [query, setQuery] = useState("");
   const [queryResponseData, setQueryResponseData] = useState<ModerateSuccessfulResponse | null>(null);
-  const [queryErrorMessage, setQueryErrormessage] = useState("");
+  const [queryErrorMessage, setQueryErrorMessage] = useState("");
 
   const onModerateClick = useCallback(async () => {
-    setQueryErrormessage("");
+    setQueryErrorMessage("");
     setQueryResponseData(null);
 
     const moderatePath = '/api/moderate';
-    const body = {
+    const body: ModerateRequest = {
       userQuery: query,
     };
 
@@ -62,14 +63,15 @@ export default function SingleQueryTabContent() {
 
     if (moderateResponseBody.success === false) // a `=== false` check is easier to comprehend than a negation prefix `!`
     {
-      setQueryErrormessage(moderateResponseBody.error);
+      setQueryErrorMessage(moderateResponseBody.error);
       return;
     }
 
     setQueryResponseData(moderateResponseBody);
   }, [query]);
+
   const onQueryInputChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
-    setQueryErrormessage("");
+    setQueryErrorMessage("");
     setQueryResponseData(null);
 
     setQuery(e.currentTarget.value);
@@ -99,8 +101,7 @@ export default function SingleQueryTabContent() {
         <CardContent className="space-y-2">
           <div className="space-y-1">
             <Label htmlFor="userQuery">Query</Label>
-            <Textarea onChange={onQueryInputChange} id="userQuery" defaultValue="" placeholder='Start typing your query...' />
-            <span className='text-red-600 font-medium'>{queryErrorMessage}</span>
+            <Textarea onChange={onQueryInputChange} value={query} id="userQuery" placeholder='Start typing your query...' />
           </div>
           {classifications.length > 0 && (
             <div className="space-y-1 text-center">
@@ -135,8 +136,9 @@ export default function SingleQueryTabContent() {
             </div>
           )}
         </CardContent>
-        <CardFooter>
-          <Button onClick={onModerateClick}>Moderate</Button>
+        <CardFooter className='flex-col'>
+          <Button onClick={onModerateClick} className='cursor-pointer'><FontAwesomeIcon icon={faShieldHalved} /> Moderate</Button>
+          <p className='text-red-600 font-medium'>{queryErrorMessage}</p>
         </CardFooter>
       </Card>
     </TabsContent>

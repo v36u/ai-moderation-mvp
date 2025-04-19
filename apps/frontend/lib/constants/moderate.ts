@@ -1,3 +1,6 @@
+import { ApiResponse, ApiSuccessfulResponse } from "./api";
+import { Result as AutocannonResult } from "autocannon";
+
 // BEFOREPROD: Install an i18n framework and use actual translations
 export const moderateLabelMappings = {
   S: "Sexual",
@@ -18,16 +21,30 @@ export type ModerateResponseSuccessfulDataItem = {
   score: number;
 };
 
-export type ModerateSuccessfulResponse = {
-  success: true;
-  data: [ModerateResponseSuccessfulDataItem[]];
+export type ModerateData = [ModerateResponseSuccessfulDataItem[]];
+
+export type ModerateRequest = {
+  userQuery: string;
 };
 
-export type ModerateErrorResponse = {
-  success: false;
-  error: string;
+export type ModerateSuccessfulResponse = ApiSuccessfulResponse<ModerateData>;
+
+export type ModerateResponse = ApiResponse<ModerateData>;
+
+export type ModerateLoadTestRequest = {
+  totalRequests: number;
+  concurrentRequests: number;
+  queryPool: string[];
 };
 
-export type ModerateResponse =
-  | ModerateSuccessfulResponse
-  | ModerateErrorResponse;
+export type ModerateLoadTestSuccessfulResponse =
+  ApiSuccessfulResponse<AutocannonResult>;
+
+export type ModerateLoadTestResponse = ApiResponse<AutocannonResult>;
+
+export const defaultTotalRequests = 100;
+export const maxTotalRequests = 10_000;
+export const maxConcurrentRequests = 20;
+export const defaultConcurrentRequests = 4;
+export const defaultQuery =
+  "I enjoyed a peaceful walk in the park today and the weather was perfect.";

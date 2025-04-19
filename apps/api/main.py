@@ -42,19 +42,19 @@ async def post_moderate(request: Request):
   if userQuery is None:
     return JSONResponse(
       status_code = status.HTTP_400_BAD_REQUEST,
-      content = { "success": False, "error": "No query provided" }
+      content = { "success": False, "error": "No query provided!" }
     )
 
   if len(userQuery) < MIN_USER_QUERY_LENGTH:
     return JSONResponse(
       status_code = status.HTTP_400_BAD_REQUEST,
-      content = { "success": False, "error": f"Query too short (minimum {MIN_USER_QUERY_LENGTH} characters)" }
+      content = { "success": False, "error": f"Query too short (minimum {MIN_USER_QUERY_LENGTH} characters)!" }
     )
 
   if len(userQuery) > MAX_USER_QUERY_LENGTH:
     return JSONResponse(
       status_code = status.HTTP_400_BAD_REQUEST,
-      content = { "success": False, "error": f"Query too long (maximum {MAX_USER_QUERY_LENGTH} characters)" }
+      content = { "success": False, "error": f"Query too long (maximum {MAX_USER_QUERY_LENGTH} characters)!" }
     )
 
   try:
@@ -72,7 +72,7 @@ async def post_moderate(request: Request):
 
     return JSONResponse(
       status_code = status.HTTP_504_GATEWAY_TIMEOUT,
-      content = { "success": False, "error": f"Moderation timed out after {MAX_INFERENCE_TIME} seconds" }
+      content = { "success": False, "error": f"Moderation timed out after {MAX_INFERENCE_TIME} seconds!" }
     )
   except MemoryError as memoryError:
     print("A memory error occurred:")
@@ -80,7 +80,7 @@ async def post_moderate(request: Request):
 
     return JSONResponse(
       status_code = status.HTTP_503_SERVICE_UNAVAILABLE,
-      content = { "success": False, "error": "Moderation failed due to memory error" }
+      content = { "success": False, "error": "Moderation failed due to memory error!" }
     )
   except Exception as exception:
     print("An unexpected error occurred:")
@@ -88,5 +88,5 @@ async def post_moderate(request: Request):
 
     return JSONResponse(
       status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-      content = { "success": False, "error": f"An unexpected error occurred" }
+      content = { "success": False, "error": f"An unexpected error occurred!" }
     )
