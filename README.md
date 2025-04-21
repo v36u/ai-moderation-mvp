@@ -10,4 +10,5 @@
    4. Bun
 2. If you've just cloned the repo, you can run this command at the root of the project: `bun run deps`
    1. It will install the dependencies for both the API and the frontend
-3. Run this command at the root of the project: `bun run dev` 2. It wil start up both the API and the frontend
+3. Run this command at the root of the project: `bun run dev`
+   1. It wil start up both the API and the frontend
