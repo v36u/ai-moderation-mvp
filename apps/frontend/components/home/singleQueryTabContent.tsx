@@ -111,9 +111,9 @@ export default function SingleQueryTabContent() {
             <div className="space-y-1 text-center">
               <h3 className="font-bold underline">Result</h3>
               <p>Your content was marked as <span className={cn(resultColorClass, "font-bold")}>{moderateLabelMappings[mostLikelyClassification.label]}</span>, with a score of <span className="font-bold">{displayDecimalAsPercentage(mostLikelyClassification.score)}</span>.</p>
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion type="single" collapsible className="w-full my-10">
                 <AccordionItem value="moderate-details">
-                  <AccordionTrigger className='text-center'><span className='w-full text-center'>Details</span></AccordionTrigger>
+                  <AccordionTrigger className='text-center'><span className='w-full text-center cursor-pointer'>Details</span></AccordionTrigger>
                   <AccordionContent>
                     <Table>
                       <TableCaption>Moderation details</TableCaption>

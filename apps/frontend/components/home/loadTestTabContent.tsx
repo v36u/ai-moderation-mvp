@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBolt, faCircleInfo, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons'
-import { ChangeEvent, TextareaHTMLAttributes, useCallback, useState } from 'react';
+import { ChangeEvent, useCallback, useState } from 'react';
 import { defaultConcurrentRequests, defaultQuery, defaultTotalRequests, maxConcurrentRequests, maxTotalRequests, ModerateLoadTestRequest, ModerateLoadTestResponse, ModerateLoadTestSuccessfulResponse } from '@/lib/constants/moderate';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -27,7 +27,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Result as AutocannonResult } from "autocannon";
+import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { CartesianGrid, Line, LineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { generateRandomHexColor } from '@/lib/utils';
+
+const percentageRegex = /p\d/;
 
 export default function LoadTestTabContent() {
   // BEFOREPROD: Use an actual form
@@ -53,6 +57,7 @@ export default function LoadTestTabContent() {
     };
 
     // BEFOREPROD: Add loaders while the query is loading; maybe use a dedicated framework for this
+    // and maybe some kind of progress bar
 
     const bodyJson = JSON.stringify(body);
     const loadTestResponse = await fetch(loadTestPath, {
@@ -96,6 +101,114 @@ export default function LoadTestTabContent() {
     const [_removedElement, ...updatedQueryPool] = queryPool;
     setQueryPool(updatedQueryPool);
   }, [queryPool]);
+
+  type StatusCodesChartDataItem = {
+    status: string;
+    count: number;
+    fill: string;
+  }
+
+  // BEFOREPROD: Use `useMemo` or similar hooks to avoid changing colors and other details on each rerender
+  let statusCodesChartData: StatusCodesChartDataItem[] = [];
+  let statusCodesChartConfig: ChartConfig = {};
+  if (loadTestResponseData) {
+    if (loadTestResponseData.data.statusCodeStats) {
+      statusCodesChartData = Object.keys(loadTestResponseData.data.statusCodeStats).map(statusCodeStatKey => {
+        if (typeof loadTestResponseData.data.statusCodeStats === 'undefined') {
+          return null;
+        }
+
+        const statusCodeStatValue = loadTestResponseData.data.statusCodeStats[statusCodeStatKey as keyof typeof loadTestResponseData.data.statusCodeStats];
+        if (typeof statusCodeStatValue.count === 'undefined') {
+          return null;
+        }
+
+        const randomColor = generateRandomHexColor();
+
+        const statusCodesChartDataItem: StatusCodesChartDataItem = {
+          status: statusCodeStatKey,
+          count: statusCodeStatValue.count,
+          fill: randomColor,
+        };
+        return statusCodesChartDataItem;
+      })
+        .filter(item => item !== null);
+
+      for (const item of statusCodesChartData) {
+        statusCodesChartConfig[item.status] = {
+          label: item.status,
+        };
+      }
+    }
+  }
+
+  type LatencyChartDataItem = {
+    percentage: string;
+    ms: number;
+  }
+
+  // BEFOREPROD: Use `useMemo` or similar hooks to avoid changing colors and other details on each rerender
+  let latencyChartData: LatencyChartDataItem[] = [];
+  let latencyChartConfig: ChartConfig = {};
+  if (loadTestResponseData) {
+    latencyChartData = Object.keys(loadTestResponseData.data.latency).map(latencyKey => {
+      if (percentageRegex.test(latencyKey) === false) {
+        return null;
+      }
+
+      let displayedPercentage = latencyKey.substring(1).replace("_", ".");
+      displayedPercentage = `${displayedPercentage}%`;
+
+      const latencyValue = loadTestResponseData.data.latency[latencyKey as keyof typeof loadTestResponseData.data.latency];
+
+      const latencyChartDataItem: LatencyChartDataItem = {
+        percentage: displayedPercentage,
+        ms: latencyValue,
+      };
+      return latencyChartDataItem;
+    })
+      .filter(item => item !== null);
+
+    for (const item of latencyChartData) {
+      latencyChartConfig[item.percentage] = {
+        label: item.percentage,
+      }
+    }
+  }
+
+  type ThroughputChartDataItem = {
+    percentage: string;
+    bytes: number;
+  }
+
+  // BEFOREPROD: Use `useMemo` or similar hooks to avoid changing colors and other details on each rerender
+  let throughputChartData: ThroughputChartDataItem[] = [];
+  let throughputChartConfig: ChartConfig = {};
+  if (loadTestResponseData) {
+    throughputChartData = Object.keys(loadTestResponseData.data.throughput).map(throughputKey => {
+      if (percentageRegex.test(throughputKey) === false) {
+        return null;
+      }
+
+      let displayedPercentage = throughputKey.substring(1).replace("_", ".");
+      displayedPercentage = `${displayedPercentage}%`;
+
+      const throughputValue = loadTestResponseData.data.throughput[throughputKey as keyof typeof loadTestResponseData.data.throughput];
+
+      const throughputChartDataItem: ThroughputChartDataItem = {
+        percentage: displayedPercentage,
+        bytes: throughputValue,
+      };
+      return throughputChartDataItem;
+    })
+      .filter(item => item !== null);
+
+    for (const item of throughputChartData) {
+      throughputChartConfig[item.percentage] = {
+        label: item.percentage,
+      }
+    }
+  }
 
   return (
     <TabsContent value="load">
@@ -145,10 +258,76 @@ export default function LoadTestTabContent() {
             {loadTestResponseData && (
               <div className="space-y-1 text-center">
                 <h3 className="font-bold underline">Result</h3>
-                <p>Below is a report of the load test.</p>
-                <Accordion type="single" collapsible className="w-full">
+                <p className='italic mb-5'>Below is a report of the load test. It starts with some charts, and at the end is the raw data.</p>
+                {statusCodesChartData.length > 0 &&
+                  <div className='flex flex-col items-center justify-center my-5'>
+                    <ChartContainer config={statusCodesChartConfig} className="min-h-[200px] w-full">
+                      <PieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+
+                        <Pie
+                          data={statusCodesChartData}
+                          dataKey="count"
+                          nameKey="status"
+                          outerRadius={150}
+                        />
+                      </PieChart>
+                    </ChartContainer>
+                    <p
+                      className="text-muted-foreground text-sm">
+                      Status codes
+                    </p>
+                  </div>
+                }
+                {latencyChartData.length > 0 &&
+                  <div className='flex flex-col items-center justify-center my-10'>
+                    <ChartContainer config={latencyChartConfig} className="min-h-[200px] w-full">
+                      <LineChart data={latencyChartData}>
+                        <defs>
+                          <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="red" />
+                            <stop offset="50%" stopColor="orange" />
+                            <stop offset="100%" stopColor="green" />
+                          </linearGradient>
+                        </defs>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="percentage" />
+                        <YAxis dataKey="ms" />
+                        <Line type="monotone" dataKey="ms" stroke="url(#latencyGradient)" />
+                      </LineChart>
+                    </ChartContainer>
+                    <p
+                      className="text-muted-foreground text-sm">
+                      Latency (ms) - lower is better
+                    </p>
+                  </div>
+                }
+                {throughputChartData.length > 0 &&
+                  <div className='flex flex-col items-center justify-center my-10'>
+                    <ChartContainer config={throughputChartConfig} className="min-h-[200px] w-full">
+                      <LineChart data={throughputChartData}>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <ChartLegend content={<ChartLegendContent />} />
+
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="percentage" />
+                        <YAxis dataKey="bytes" />
+                        <Line type="monotone" dataKey="bytes" stroke="purple" />
+                      </LineChart>
+                    </ChartContainer>
+                    <p
+                      className="text-muted-foreground text-sm">
+                      Throughput (bytes) - depicts traffic generated by the test
+                    </p>
+                  </div>
+                }
+                <Accordion type="single" collapsible className="w-full my-10">
                   <AccordionItem value="load-test-raw-data">
-                    <AccordionTrigger className='text-center'><span className='w-full text-center'>See full raw data</span></AccordionTrigger>
+                    <AccordionTrigger className='text-center'><span className='w-full text-center cursor-pointer'>See full raw data</span></AccordionTrigger>
                     <AccordionContent>
                       <RecursiveRawDataValue rawData={loadTestResponseData.data} tableCaption='Load test full raw data' />
                     </AccordionContent>

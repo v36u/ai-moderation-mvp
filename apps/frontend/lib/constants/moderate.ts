@@ -43,8 +43,8 @@ export type ModerateLoadTestSuccessfulResponse =
 export type ModerateLoadTestResponse = ApiResponse<AutocannonResult>;
 
 export const defaultTotalRequests = 100;
-export const maxTotalRequests = 10_000;
-export const maxConcurrentRequests = 20;
+export const maxTotalRequests = 1_000_000;
+export const maxConcurrentRequests = 100;
 export const defaultConcurrentRequests = 4;
 export const defaultQuery =
   "I enjoyed a peaceful walk in the park today and the weather was perfect.";
