@@ -1,6 +1,13 @@
 {
   "name": "ai-moderation-workspace",
-  "scripts": {},
+  "scripts": {
+    "deps:api": "pip install --requirement apps/api/requirements.txt",
+    "deps:frontend": "bun install --cwd apps/frontend",
+    "deps": "bunx concurrently \"bun run deps:api\" \"bun run deps:frontend\" --kill-others-on-fail",
+    "dev:api": "fastapi dev apps/api/main.py",
+    "dev:frontend": "bun run --cwd apps/frontend dev",
+    "dev": "bunx concurrently \"bun run dev:api\" \"bun run dev:frontend\" --kill-others-on-fail"
+  },
   "devDependencies": {
     "concurrently": "^9.1.2"
   }
